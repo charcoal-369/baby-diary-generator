@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Your Personalised Baby Diary</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f4ee;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      color: #3f463d;
+    }
+    .card {
+      width: min(92vw, 560px);
+      background: #fff;
+      border: 1px solid #D7E3D1;
+      border-radius: 22px;
+      padding: 34px;
+      box-shadow: 0 8px 32px rgba(95,125,78,.12);
+      box-sizing: border-box;
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: #5F7D4E;
+      font-size: 34px;
+      font-weight: 500;
+      text-align: center;
+    }
+    p {
+      margin: 0 0 26px;
+      line-height: 1.45;
+      text-align: center;
+      color: #697064;
+      font-size: 18px;
+    }
+    label {
+      display: block;
+      margin: 18px 0 7px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #6E746B;
+    }
+    input, select {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #D7E3D1;
+      border-radius: 12px;
+      font-size: 17px;
+      font-family: inherit;
+      box-sizing: border-box;
+      color: #3a3a3a;
+      background: #fff;
+    }
+    button {
+      width: 100%;
+      margin-top: 26px;
+      padding: 15px 18px;
+      border: 0;
+      border-radius: 13px;
+      background: #5F7D4E;
+      color: #fff;
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: #4e6a3f; }
+    .note {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #8a9185;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Create Your Baby Diary</h1>
+    <p>Enter your baby's details and your personalised first-year diary will be created as a PDF.</p>
+
+    <form method="POST" action="/generate">
+      <label for="babyName">Baby's name</label>
+      <input id="babyName" name="babyName" type="text" placeholder="e.g. Sophie" required />
+
+      <label for="babyDob">Date of birth</label>
+      <input id="babyDob" name="babyDob" type="date" required />
+
+      <label for="dateFormat">Date format</label>
+      <select id="dateFormat" name="dateFormat">
+        <option value="DMY">Day / Month / Year</option>
+        <option value="MDY">Month / Day / Year</option>
+      </select>
+
+      <button type="submit">Create My Personalised Diary</button>
+    </form>
+
+    <div class="note">The PDF may take a little moment to generate.</div>
+  </main>
+</body>
+</html>
