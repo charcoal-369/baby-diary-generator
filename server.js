@@ -17,7 +17,7 @@
 
 const path = require('path');
 const express = require('express');
-const puppeteer = require('puppeteer');
+let puppeteer;
 const { redeemCode } = require('./codes');
 
 const app = express();
@@ -85,10 +85,13 @@ app.post('/generate', async (req, res) => {
 let browserPromise = null;
 function getBrowser(){
   if(!browserPromise){
-    browserPromise = puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    browserPromise = (async () => {
+      if(!puppeteer) puppeteer = (await import('puppeteer')).default;
+      return puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+    })();
   }
   return browserPromise;
 }
