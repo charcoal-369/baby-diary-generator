@@ -65,7 +65,7 @@ body{
 
 .controls-row{
   display:grid;
-  grid-template-columns:1fr 1fr 1fr 1fr auto auto;
+  grid-template-columns:1fr 1fr 1fr auto auto;
   gap:12px;
   align-items:end;
 }
@@ -117,7 +117,7 @@ button:disabled{
   cursor:not-allowed;
 }
 
-.access-error{
+.error-msg{
   display:none;
   width:100%;
   max-width:860px;
@@ -132,7 +132,7 @@ button:disabled{
   box-sizing:border-box;
 }
 
-.access-error.show{ display:block; }
+.error-msg.show{ display:block; }
 
 /* ── Book wrapper ── */
 #book{
@@ -174,7 +174,7 @@ button:disabled{
   display:block;
 }
 
-/* ── Cover overlays (recalculated for 0.5in inset cover image) ── */
+/* ── Cover overlays ── */
 .cover-name-mask{
   position:absolute;
   left:1.029in;
@@ -423,16 +423,12 @@ button:disabled{
         <option value="MDY">Month / Day / Year</option>
       </select>
     </div>
-    <div>
-      <label for="accessCode">Access Code</label>
-      <input id="accessCode" type="text" placeholder="Enter your code" autocomplete="off">
-    </div>
     <button onclick="renderBook()">Generate Book</button>
     <button class="secondary" id="downloadBtn" onclick="downloadPdf()">Download PDF</button>
   </div>
 </div>
 
-<div class="access-error" id="accessError"></div>
+<div class="error-msg" id="errorMsg"></div>
 
 <div id="book"></div>
 
@@ -480,7 +476,6 @@ function fmtCoverDate(date, format){
       year:'numeric'
     });
   }
-
   const day = ordinal(date.getDate());
   const monthYear = date.toLocaleDateString('en-AU', {
     month:'long',
@@ -525,7 +520,6 @@ function imagePage(num){
 
 function coverPage(name, dob, format){
   const dateStr = fmtCoverDate(dob, format);
-
   return `
 <section class="page static-image-page">
   <img class="full-page" src="page_01.png" alt="Cover">
@@ -550,28 +544,23 @@ function calendarRows(start, end, birth, monthIndex){
 
   while(cur <= finish){
     const row = [];
-
     for(let i=0; i<7; i++){
       const c = new Date(cur);
       const inRange = c >= start && c <= end;
       let marker = "";
-
       if(sameDay(c,birth)){
         marker = "Birth day";
       } else if(sameDay(c,start) && monthIndex > 1){
         marker = `${monthIndex-1} month${monthIndex-1===1?'':'s'} old`;
       }
-
       row.push({
         num:c.getDate(),
         outside:!inRange,
         marker,
         monthName:(c.getDate()===1)?c.toLocaleDateString('en-AU',{month:'long'}):""
       });
-
       cur.setDate(cur.getDate()+1);
     }
-
     rows.push(row);
   }
 
@@ -597,12 +586,10 @@ function dynamicCalendarPage(monthIndex, dob){
 <section class="page calendar-page">
   <div class="calendar-frame"></div>
   <div class="month-title">Month ${monthIndex}</div>
-
   <div class="calendar-card">
     <h4>Baby Care Tip</h4>
     <p>${monthTips[monthIndex]}</p>
   </div>
-
   <div class="calendar-grid">
     <div class="calendar-header">
       <div class="weekday">Mon</div>
@@ -615,20 +602,17 @@ function dynamicCalendarPage(monthIndex, dob){
     </div>
     ${calendarRows(start, end, dob, monthIndex)}
   </div>
-
   <div class="notes-title">What felt different this month?</div>
-
   <div class="notes-block">
     ${Array.from({length:7}, () => `<div class="writing-line"></div>`).join('')}
   </div>
-
   <div class="soft-footer">• • •</div>
 </section>`;
 }
 
 function scalePages(){
   const pages = document.querySelectorAll('.page');
-  const pageW = 8.5 * 96; // 816px at 96dpi
+  const pageW = 8.5 * 96;
   const avail = window.innerWidth - 40;
   const scale = Math.min(1, avail / pageW);
   pages.forEach(p => {
@@ -655,16 +639,13 @@ function renderBook(){
       html += coverPage(name, dob, format);
       continue;
     }
-
     const calendarEntry = Object.entries(dynamicCalendarPages).find(
       ([month, pageNum]) => pageNum === page
     );
-
     if(calendarEntry){
       html += dynamicCalendarPage(Number(calendarEntry[0]), dob);
       continue;
     }
-
     html += imagePage(page);
   }
 
@@ -672,11 +653,7 @@ function renderBook(){
   scalePages();
 }
 
-// ── Headless render mode, used only by the server's PDF generator ──
-// If the page is loaded with ?print=1&babyName=...&babyDob=...&dateFormat=...
-// it fills the form from the query string, renders the book automatically,
-// and sets a flag on <body> that Puppeteer waits for before printing.
-// This does not change anything about normal interactive use of the page.
+// ── Headless render mode for server PDF generation ──
 (function autoRenderForPrint(){
   const params = new URLSearchParams(window.location.search);
   if(params.get('print') !== '1') return;
@@ -695,37 +672,30 @@ function renderBook(){
   });
 })();
 
-function showAccessError(message){
-  const el = document.getElementById('accessError');
+function showError(message){
+  const el = document.getElementById('errorMsg');
   el.textContent = message;
   el.classList.add('show');
 }
 
-function clearAccessError(){
-  const el = document.getElementById('accessError');
+function clearError(){
+  const el = document.getElementById('errorMsg');
   el.textContent = "";
   el.classList.remove('show');
 }
 
 async function downloadPdf(){
-  clearAccessError();
+  clearError();
 
   const name = document.getElementById('babyName').value.trim() || "Baby";
   const dobValue = document.getElementById('babyDob').value;
   const format = document.getElementById('dateFormat').value;
-  const code = document.getElementById('accessCode').value.trim();
 
   if(!dobValue){
     alert("Please enter a date of birth.");
     return;
   }
 
-  if(!code){
-    showAccessError("Please enter your access code.");
-    return;
-  }
-
-  // Make sure the book is rendered so what the person sees matches the PDF.
   renderBook();
 
   const btn = document.getElementById('downloadBtn');
@@ -738,7 +708,6 @@ async function downloadPdf(){
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({
-        code,
         babyName: name,
         babyDob: dobValue,
         dateFormat: format
@@ -750,8 +719,8 @@ async function downloadPdf(){
       try{
         const data = await response.json();
         if(data && data.error) message = data.error;
-      }catch(e){ /* ignore parse errors, fall back to default message */ }
-      showAccessError(message);
+      }catch(e){}
+      showError(message);
       return;
     }
 
@@ -765,7 +734,7 @@ async function downloadPdf(){
     a.remove();
     window.URL.revokeObjectURL(url);
   }catch(err){
-    showAccessError("Couldn't reach the server. Please check your connection and try again.");
+    showError("Couldn't reach the server. Please check your connection and try again.");
   }finally{
     btn.disabled = false;
     btn.textContent = originalLabel;
