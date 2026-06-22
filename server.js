@@ -18,7 +18,6 @@
 const path = require('path');
 const express = require('express');
 let puppeteer;
-const { redeemCode } = require('./codes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,30 +25,16 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-function friendlyErrorFor(reason){
-  if(reason === 'used'){
-    return "That access code has already been used. Each code works once — please use a new one or contact support if you think this is a mistake.";
-  }
-  // 'not_found' and anything else fall back to a single generic message
-  // so we don't reveal which codes exist.
-  return "That access code isn't valid. Please double-check it and try again.";
-}
 
 app.post('/generate', async (req, res) => {
   try{
-    const { code, babyName, babyDob, dateFormat } = req.body || {};
+    const { babyName, babyDob, dateFormat } = req.body || {};
 
     if(!babyDob){
       return res.status(400).json({ error: "Please enter a date of birth." });
     }
 
-    // 1. Validate + consume the code BEFORE doing any expensive work.
-    const result = await redeemCode(code);
-    if(!result.ok){
-      return res.status(403).json({ error: friendlyErrorFor(result.reason) });
-    }
-
-    // 2. Code is valid and now marked used — generate the PDF.
+    // Generate the PDF.
     const safeName = String(babyName || 'Baby').trim() || 'Baby';
     const safeDob = String(babyDob);
     const safeFormat = (dateFormat === 'MDY') ? 'MDY' : 'DMY';
@@ -73,9 +58,6 @@ app.post('/generate', async (req, res) => {
 
   }catch(err){
     console.error('Error in /generate:', err);
-    // Note: if redeemCode already succeeded but PDF generation fails here,
-    // the code has still been consumed. That trade-off is intentional —
-    // see README.md for why, and how to re-issue a code if this happens.
     res.status(500).json({
       error: "Something went wrong generating your PDF. Please try again, and contact support if it keeps happening."
     });
