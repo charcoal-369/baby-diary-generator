@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby Diary Hybrid PNG + Dynamic DOB</title>
+
+<style>
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/CormorantGaramond-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/CormorantGaramond-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/CormorantGaramond-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@page{
+  size:8.5in 11in;
+  margin:0;
+}
+
+html, body{
+  margin:0;
+  padding:0;
+  background:#f0f4ee;
+}
+
+body{
+  font-family:"Cormorant Garamond", Georgia, serif;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* ── Controls ── */
+.controls{
+  width:100%;
+  max-width:860px;
+  margin:28px auto 24px;
+  padding:24px 28px;
+  border:1px solid #D7E3D1;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 2px 12px rgba(95,125,78,.08);
+  box-sizing:border-box;
+}
+
+.controls h1{
+  margin:0 0 16px;
+  color:#5F7D4E;
+  font-size:30px;
+  font-weight:500;
+}
+
+.controls-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr auto auto;
+  gap:12px;
+  align-items:end;
+}
+
+label{
+  display:block;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:#6E746B;
+  margin-bottom:6px;
+}
+
+input, select{
+  width:100%;
+  padding:11px 12px;
+  border:1px solid #D7E3D1;
+  border-radius:10px;
+  font-size:15px;
+  font-family:inherit;
+  box-sizing:border-box;
+  background:#fff;
+  color:#3a3a3a;
+}
+
+button{
+  padding:12px 20px;
+  border:0;
+  border-radius:10px;
+  background:#5F7D4E;
+  color:white;
+  font-size:14px;
+  font-family:inherit;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+button:hover{ background:#4e6a3f; }
+
+button.secondary{
+  background:#87AE73;
+}
+
+button.secondary:hover{ background:#729960; }
+
+/* ── Book wrapper ── */
+#book{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+  padding:0 0 40px;
+  width:100%;
+}
+
+/* ── Page shell ── */
+.page{
+  position:relative;
+  width:8.5in;
+  height:11in;
+  overflow:hidden;
+  background:white;
+  margin:0 auto;
+  box-shadow:0 4px 24px rgba(0,0,0,.13);
+  flex-shrink:0;
+  transform-origin:top center;
+}
+
+.static-image-page{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0.5in;
+  box-sizing:border-box;
+}
+
+.static-image-page img.full-page,
+.page img.full-page{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center center;
+  display:block;
+}
+
+/* ── Cover overlays (recalculated for 0.5in inset cover image) ── */
+.cover-name-mask{
+  position:absolute;
+  left:1.029in;
+  right:1.029in;
+  top:6.426in;
+  height:3.617in;
+  background:rgba(255,255,255,.92);
+}
+
+.cover-poem{
+  position:absolute;
+  left:1.135in;
+  right:1.135in;
+  top:6.559in;
+  text-align:center;
+  color:#5F7D4E;
+  font-size:10.1pt;
+  font-style:italic;
+  line-height:1.75;
+  letter-spacing:.01em;
+}
+
+.cover-dynamic-name{
+  position:absolute;
+  left:1.162in;
+  right:1.162in;
+  top:8.014in;
+  text-align:center;
+  color:#5F5A54;
+  font-size:26.5pt;
+  line-height:1.15;
+  font-weight:400;
+  letter-spacing:.01em;
+}
+
+.cover-dynamic-date{
+  position:absolute;
+  left:1.162in;
+  right:1.162in;
+  top:8.808in;
+  text-align:center;
+  color:#6F6A64;
+  font-size:17.6pt;
+  font-style:italic;
+  line-height:1.2;
+}
+
+.cover-poem .poem-line{
+  display:block;
+}
+
+/* ── Calendar pages ── */
+.calendar-page{
+  padding:1.45in 1in 1.8in 1in;
+  box-sizing:border-box;
+  font-family:"Cormorant Garamond", Georgia, serif;
+  color:#4A4A4A;
+}
+
+.calendar-frame{
+  position:absolute;
+  inset:1.25in .85in 1.55in .85in;
+  border:4px solid #7FA874;
+  border-radius:16px;
+  pointer-events:none;
+}
+
+.calendar-frame::after{
+  content:"";
+  position:absolute;
+  inset:.13in;
+  border:1px solid #D6E2D1;
+  border-radius:11px;
+}
+
+.month-title{
+  text-align:center;
+  font-size:18pt;
+  color:#5F7D4E;
+  margin-top:0;
+  margin-bottom:.18in;
+  font-weight:500;
+}
+
+.month-in-cell{
+  display:block;
+  font-size:5.8pt;
+  font-weight:700;
+  color:#5F7D4E;
+  line-height:1.15;
+  margin-top:.03in;
+  text-transform:uppercase;
+}
+
+.calendar-card{
+  border:1px solid #D7E3D1;
+  border-radius:12px;
+  padding:.14in .2in;
+  margin:0 0 .22in;
+}
+
+.calendar-card h4{
+  margin:0 0 .05in;
+  color:#5F7D4E;
+  font-size:10.5pt;
+  font-weight:500;
+}
+
+.calendar-card p{
+  margin:0;
+  font-size:8.5pt;
+  font-weight:400;
+  line-height:1.35;
+}
+
+.calendar-grid,
+.notes-block{
+  width:100%;
+}
+
+.calendar-header,
+.calendar-row{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:.08in;
+}
+
+.calendar-header{
+  margin-bottom:.07in;
+}
+
+.weekday{
+  text-align:center;
+  font-size:7pt;
+  font-weight:400;
+  color:#92a38d;
+}
+
+.cell{
+  border:1px solid #D7E3D1;
+  border-radius:8px;
+  min-height:.52in;
+  padding:.07in .09in;
+  box-sizing:border-box;
+}
+
+.cell.outside{
+  background:#fafcfa;
+  color:#c1cbc1;
+}
+
+.num{
+  display:block;
+  font-size:8pt;
+  font-weight:400;
+  color:#4A4A4A;
+}
+
+.marker{
+  display:block;
+  margin-top:.03in;
+  font-size:6.2pt;
+  font-weight:400;
+  line-height:1.2;
+  color:#7f897f;
+}
+
+.notes-title{
+  margin:.26in 0 .12in;
+  font-size:10pt;
+  font-weight:400;
+  color:#5F7D4E;
+}
+
+.writing-line{
+  border-bottom:1px solid rgba(95,125,78,.35);
+  height:.28in;
+}
+
+.soft-footer{
+  position:absolute;
+  left:1in;
+  right:1in;
+  bottom:1.62in;
+  text-align:center;
+  color:#c3d0be;
+  letter-spacing:4px;
+  font-size:7.5pt;
+}
+
+/* ── Print ── */
+@media print{
+  html, body{
+    background:#fff;
+    display:block;
+    align-items:unset;
+  }
+
+  .controls{ display:none !important; }
+
+  #book{
+    display:block;
+    padding:0;
+    gap:0;
+  }
+
+  .page{
+    width:8.5in !important;
+    height:11in !important;
+    margin:0 !important;
+    box-shadow:none !important;
+    page-break-after:always !important;
+    break-after:page !important;
+  }
+
+  .page:last-child{
+    page-break-after:avoid !important;
+    break-after:avoid !important;
+  }
+
+  .page:first-child{
+    page-break-before:avoid !important;
+    break-before:avoid !important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="controls">
+  <h1>Baby Diary Hybrid Generator</h1>
+  <div class="controls-row">
+    <div>
+      <label for="babyName">Baby Name</label>
+      <input id="babyName" type="text" placeholder="Baby name">
+    </div>
+    <div>
+      <label for="babyDob">Date of Birth</label>
+      <input id="babyDob" type="date">
+    </div>
+    <div>
+      <label for="dateFormat">Date Format</label>
+      <select id="dateFormat">
+        <option value="DMY">Day / Month / Year</option>
+        <option value="MDY">Month / Day / Year</option>
+      </select>
+    </div>
+    <button onclick="renderBook()">Generate Book</button>
+    <button class="secondary" onclick="window.print()">Print / Save PDF</button>
+  </div>
+</div>
+
+<div id="book"></div>
+
+<script>
+const monthTips = {
+  1: "Always support bub's head and neck whenever you lift or carry them. Their neck muscles are still developing and they rely completely on you for that support every single time you pick them up.",
+  2: "Zip-up sleepers are a gift at 3am. Swapping buttons for zips makes night changes much faster and far less fiddly when everyone is half asleep and nobody has the patience for snaps.",
+  3: "Try a few different pacifier shapes and brands if you plan to use one. Babies can become very particular, and it helps not to be stuck with just one single option. Having a backup style they'll also accept is genuinely handy.",
+  4: "Early tired signs to watch for include yawning, looking away, going quiet, and slowing down their movements. Catching early cues makes settling much easier.",
+  5: "A long shh track or consistent white noise can be very helpful for settling. It creates continuity when you are trying to ease bub into sleep.",
+  6: "Bub is ready to start solids when they can sit upright with minimal support, hold their head steady, have lost the tongue thrust reflex, and show clear interest in food.",
+  7: "A few minutes of carrying and movement before sitting quietly can make settling easier. Sometimes bub needs that little bridge between active and calm.",
+  8: "Dedicate a low kitchen drawer to bub-safe items like wooden spoons, containers and silicone spatulas. They feel incredibly special having access to grown-up things and it keeps them busy while you cook.",
+  9: "Peek a boo, songs, raspberries, and playful repetition are powerful learning tools at this age. They look simple but they do big developmental work.",
+  10: "If bub has started pulling to stand, make sure furniture they cruise along is stable. It is worth doing a quick scan of the room from their eye level.",
+  11: "Pointing becomes an important communication tool around now. When bub points at something, look at what they're indicating and name it.",
+  12: "Keep full spare outfits bundled in your nappy bag so you can grab one complete change quickly when you are out. Roll a onesie, pants and socks all together."
+};
+
+const dynamicCalendarPages = {
+  1: 11,
+  2: 14,
+  3: 17,
+  4: 20,
+  5: 23,
+  6: 26,
+  7: 29,
+  8: 32,
+  9: 35,
+  10: 38,
+  11: 41,
+  12: 44
+};
+
+function ordinal(n){
+  const s=["th","st","nd","rd"], v=n%100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
+function fmtCoverDate(date, format){
+  if(format === 'MDY'){
+    return date.toLocaleDateString('en-US', {
+      month:'long',
+      day:'numeric',
+      year:'numeric'
+    });
+  }
+
+  const day = ordinal(date.getDate());
+  const monthYear = date.toLocaleDateString('en-AU', {
+    month:'long',
+    year:'numeric'
+  });
+  return `${day} ${monthYear}`;
+}
+
+function addMonthsKeepingDay(date, count){
+  const d = new Date(date);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + count);
+  const maxDay = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  d.setDate(Math.min(day, maxDay));
+  return d;
+}
+
+function weekStartMonday(date){
+  const d = new Date(date);
+  const offset = (d.getDay()+6)%7;
+  d.setDate(d.getDate()-offset);
+  return d;
+}
+
+function weekEndSunday(date){
+  const d = weekStartMonday(date);
+  d.setDate(d.getDate()+6);
+  return d;
+}
+
+function sameDay(a,b){
+  return a.getFullYear()===b.getFullYear() &&
+         a.getMonth()===b.getMonth() &&
+         a.getDate()===b.getDate();
+}
+
+function imagePage(num){
+  const pageFile = `page_${String(num).padStart(2,'0')}.png`;
+  return `<section class="page static-image-page"><img class="full-page" src="${pageFile}" alt="Page ${num}"></section>`;
+}
+
+function coverPage(name, dob, format){
+  const dateStr = fmtCoverDate(dob, format);
+
+  return `
+<section class="page static-image-page">
+  <img class="full-page" src="page_01.png" alt="Cover">
+  <div class="cover-name-mask"></div>
+  <div class="cover-poem">
+    <span class="poem-line">You arrived and changed everything,</span>
+    <span class="poem-line">the light in the room, the sound of the house,</span>
+    <span class="poem-line">the way time moves.</span>
+    <span class="poem-line" style="margin-top:.18em;display:block;">These pages hold the story of your first year,</span>
+    <span class="poem-line">written with love, one day at a time.</span>
+  </div>
+  <div class="cover-dynamic-name">${name}</div>
+  <div class="cover-dynamic-date">${dateStr}</div>
+</section>`;
+}
+
+function calendarRows(start, end, birth, monthIndex){
+  const begin = weekStartMonday(start);
+  const finish = weekEndSunday(end);
+  const rows = [];
+  let cur = new Date(begin);
+
+  while(cur <= finish){
+    const row = [];
+
+    for(let i=0; i<7; i++){
+      const c = new Date(cur);
+      const inRange = c >= start && c <= end;
+      let marker = "";
+
+      if(sameDay(c,birth)){
+        marker = "Birth day";
+      } else if(sameDay(c,start) && monthIndex > 1){
+        marker = `${monthIndex-1} month${monthIndex-1===1?'':'s'} old`;
+      }
+
+      row.push({
+        num:c.getDate(),
+        outside:!inRange,
+        marker,
+        monthName:(c.getDate()===1)?c.toLocaleDateString('en-AU',{month:'long'}):""
+      });
+
+      cur.setDate(cur.getDate()+1);
+    }
+
+    rows.push(row);
+  }
+
+  return rows.map(row => `
+<div class="calendar-row">
+  ${row.map(cell => `
+    <div class="cell ${cell.outside ? 'outside' : ''}">
+      <span class="num">${cell.num}</span>
+      ${cell.monthName ? `<span class="month-in-cell">${cell.monthName}</span>` : ''}
+      ${cell.marker ? `<span class="marker">${cell.marker}</span>` : ''}
+    </div>
+  `).join('')}
+</div>`).join('');
+}
+
+function dynamicCalendarPage(monthIndex, dob){
+  const start = addMonthsKeepingDay(dob, monthIndex-1);
+  const nextStart = addMonthsKeepingDay(dob, monthIndex);
+  const end = new Date(nextStart);
+  end.setDate(end.getDate()-1);
+
+  return `
+<section class="page calendar-page">
+  <div class="calendar-frame"></div>
+  <div class="month-title">Month ${monthIndex}</div>
+
+  <div class="calendar-card">
+    <h4>Baby Care Tip</h4>
+    <p>${monthTips[monthIndex]}</p>
+  </div>
+
+  <div class="calendar-grid">
+    <div class="calendar-header">
+      <div class="weekday">Mon</div>
+      <div class="weekday">Tue</div>
+      <div class="weekday">Wed</div>
+      <div class="weekday">Thu</div>
+      <div class="weekday">Fri</div>
+      <div class="weekday">Sat</div>
+      <div class="weekday">Sun</div>
+    </div>
+    ${calendarRows(start, end, dob, monthIndex)}
+  </div>
+
+  <div class="notes-title">What felt different this month?</div>
+
+  <div class="notes-block">
+    ${Array.from({length:7}, () => `<div class="writing-line"></div>`).join('')}
+  </div>
+
+  <div class="soft-footer">• • •</div>
+</section>`;
+}
+
+function scalePages(){
+  const pages = document.querySelectorAll('.page');
+  const pageW = 8.5 * 96; // 816px at 96dpi
+  const avail = window.innerWidth - 40;
+  const scale = Math.min(1, avail / pageW);
+  pages.forEach(p => {
+    p.style.transform = `scale(${scale})`;
+    p.style.marginBottom = `-${(1 - scale) * 11 * 96 * 0.5}px`;
+  });
+}
+ 
+function renderBook(){
+  const name = document.getElementById('babyName').value.trim() || "Baby";
+  const dobValue = document.getElementById('babyDob').value;
+  const format = document.getElementById('dateFormat').value;
+
+  if(!dobValue){
+    alert("Please enter a date of birth.");
+    return;
+  }
+
+  const dob = new Date(dobValue + "T00:00:00");
+  let html = "";
+
+  for(let page=1; page<=50; page++){
+    if(page === 1){
+      html += coverPage(name, dob, format);
+      continue;
+    }
+
+    const calendarEntry = Object.entries(dynamicCalendarPages).find(
+      ([month, pageNum]) => pageNum === page
+    );
+
+    if(calendarEntry){
+      html += dynamicCalendarPage(Number(calendarEntry[0]), dob);
+      continue;
+    }
+
+    html += imagePage(page);
+  }
+
+  document.getElementById("book").innerHTML = html;
+  scalePages();
+}
+
+window.addEventListener('resize', scalePages);
+window.addEventListener('load', scalePages);
+</script>
+
+</body>
+</html>

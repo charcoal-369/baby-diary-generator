@@ -1,0 +1,4 @@
+node_modules/
+codes.json
+codes.json.tmp
+.env
